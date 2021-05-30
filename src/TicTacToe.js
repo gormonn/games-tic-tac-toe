@@ -165,33 +165,35 @@ export default function TicTacToe() {
 
   useEffect(() => reset(), [size]);
 
-  const clickHandler =
-    (x, y, name, otherPlayer = false) =>
-    (e) => {
-      //   console.log({ x, y, name, otherPlayer });
-      const newBattleField = Object.assign([], battleField, {
-        [x]: Object.assign([], battleField[x], {
-          [y]: otherPlayer ? "o" : "x",
-        }),
-      });
-      setBattleField(newBattleField);
+  const clickHandler = useCallback(
+    (iHor, iVert, name, otherPlayer = false) =>
+      (e) => {
+        if (otherPlayer) console.log({ iHor, iVert, name, otherPlayer });
+        const newBattleField = Object.assign([], battleField, {
+          [iHor]: Object.assign([], battleField[iHor], {
+            [iVert]: otherPlayer ? "o" : "x",
+          }),
+        });
+        setBattleField(newBattleField);
 
-      const touchedSet = new Set([...touchedCells, name]);
-      setTouchedCells([...touchedSet]);
+        const touchedSet = new Set([...touchedCells, name]);
+        setTouchedCells([...touchedSet]);
 
-      const unTouchedSet = new Set([...unTouchedCells]);
-      unTouchedSet.delete(name);
-      setUnTouchedCells([...unTouchedSet]);
+        const unTouchedSet = new Set([...unTouchedCells]);
+        unTouchedSet.delete(name);
+        setUnTouchedCells([...unTouchedSet]);
 
-      setPlayerTurn((turn) => !turn);
+        setPlayerTurn((turn) => !turn);
 
-      const newWinSchemas = { ...winSchemas };
-      for (let key in winSchemas) {
-        if (key.includes(name))
-          newWinSchemas[key] += otherPlayer ? O_VAL : X_VAL;
-      }
-      setWinSchemas(newWinSchemas);
-    };
+        const newWinSchemas = { ...winSchemas };
+        for (let key in winSchemas) {
+          if (key.includes(name))
+            newWinSchemas[key] += otherPlayer ? O_VAL : X_VAL;
+        }
+        setWinSchemas(newWinSchemas);
+      },
+    [battleField, touchedCells, unTouchedCells, winSchemas]
+  );
 
   useEffect(() => {
     function checkWinner() {
@@ -217,8 +219,8 @@ export default function TicTacToe() {
       const randomCell =
         unTouchedCells[Math.floor(Math.random() * unTouchedCells.length)];
       const otherPlayer = true;
-      const [x, y] = cellNameParser(randomCell);
-      clickHandler(x, y, randomCell, otherPlayer)();
+      const [iHor, iVert] = cellNameParser(randomCell);
+      clickHandler(iHor, iVert, randomCell, otherPlayer)();
     }
   }, [unTouchedCells]);
 
@@ -266,14 +268,14 @@ export default function TicTacToe() {
       <button onClick={reset}>Retry</button>
       <Box>
         <GameOver winner={winner} reset={reset} />
-        {battleField.map((rows, i) => (
-          <Rows key={i}>
-            {rows.map((cell, ci) => (
+        {battleField.map((rows, iHor) => (
+          <Rows key={iHor}>
+            {rows.map((cell, iVert) => (
               <Col
-                key={`${i}-${ci}-${gameId}`}
+                key={`${iHor}-${iVert}-${gameId}`}
                 {...{
-                  i,
-                  ci,
+                  iHor,
+                  iVert,
                   winner,
                   cell,
                   clickHandler,
@@ -293,8 +295,8 @@ export default function TicTacToe() {
 }
 
 const Col = ({
-  i,
-  ci,
+  iHor,
+  iVert,
   winner,
   cell,
   clickHandler,
@@ -304,8 +306,7 @@ const Col = ({
   playerTurn,
   touchedCells,
 }) => {
-  //   const [touched, setTouched] = useState(false);
-  const name = `${ci}${nameSeparator}${iSymbols[i]}`;
+  const name = `${iHor}${nameSeparator}${iSymbols[iVert]}`;
   const touched = touchedCells.includes(name);
   const isWinLine = winLine.includes(name);
   const isWinnerCell =
@@ -327,15 +328,13 @@ const Col = ({
       $isWinnerCell={isWinnerCell}
       onClick={() => {
         if (playerTurn) {
-          //   setTouched(true);
-          clickHandler(i, ci, name)();
+          clickHandler(iHor, iVert, name)();
         }
       }}
       onContextMenu={(e) => {
         e.preventDefault();
         if (!withBot && !playerTurn) {
-          //   setTouched(true);
-          clickHandler(i, ci, name, true)();
+          clickHandler(iHor, iVert, name, true)();
         }
         return false;
       }}
