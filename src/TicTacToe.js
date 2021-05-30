@@ -138,7 +138,7 @@ export default function TicTacToe() {
   const [touchedCells, setTouchedCells] = useState([]);
   const [unTouchedCells, setUnTouchedCells] = useState(allCells);
   const [hardMode, setHardMode] = useState(false);
-  const [withBot, setWithBot] = useState(false);
+  const [withBot, setWithBot] = useState("bot_random");
   const X_VAL = 2;
   const X_MAX = size * X_VAL;
   const O_VAL = X_MAX + 1;
@@ -250,7 +250,7 @@ export default function TicTacToe() {
         {/* <input type="number" onChange={preSetSize} value={size} /> */}
       </label>
       <label>
-        HardMode
+        HardMode:
         <input
           type="checkbox"
           onChange={() => setHardMode((mode) => !mode)}
@@ -258,7 +258,12 @@ export default function TicTacToe() {
         />
       </label>
       <label>
-        With Bot
+        Opponent:
+        <select onChange={preSet(setWithBot)} value={withBot}>
+          <option value="0">Other player</option>
+          <option value="1">Random bot</option>
+          <option value="2">Win or tie bot</option>
+        </select>
         <input
           type="checkbox"
           onChange={preSet(setWithBot, !withBot)}
