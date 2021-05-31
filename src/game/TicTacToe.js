@@ -5,122 +5,18 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import styled from "styled-components";
-import { useSpring, animated, to } from "@react-spring/web";
-
-const Overlay = styled.div`
-  background: ${(p) => (p.$winner ? "rgba(30, 30, 30, 0.5)" : "none")};
-  z-index: ${(p) => (p.$winner ? "1" : "0")};
-  transition: 200ms;
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;
-const Rows = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-const Box = styled.div`
-  max-width: 100%;
-  max-height: 100%;
-  min-width: 100%;
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-`;
-const Column = styled(animated.div)`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: 500ms;
-  background: ${(p) => (p.$touched ? "darkgray" : "gray")};
-  width: 100px;
-  height: 100px;
-  position: relative;
-  pointer-events: ${(p) => (p.$touched ? "none" : "auto")};
-  cursor: ${(p) => (p.$touched ? "none" : "pointer")};
-  &:hover {
-    background: ${(p) => (p.$touched ? "none" : "rgba(255,255,255,.5)")};
-  }
-  border: ${(p) => (p.$isWinLine ? "4px solid black " : "none ")};
-  box-sizing: border-box;
-  zoom: ${(p) => (p.$winner ? "1!important;" : "")};
-`;
-const ColumnName = styled.span`
-  color: gray;
-  position: absolute;
-  bottom: 14px;
-  right: 14px;
-  font-size: 14px;
-`;
-
-const battleFieldRaw = (size) => new Array(size).fill(new Array(size).fill(0));
-const iSymbols = ((i) =>
-  [...Array(26)].map((_) => (++i).toString(36), (i = 9)).join``)(0);
-
-const nameSeparator = ":";
-const cellNameParser = (name) => {
-  const [x, yStr] = name.split(nameSeparator);
-  const y = iSymbols.indexOf(yStr);
-  return [Number(x), Number(y)];
-};
-
-const winSchemasRaw = (size) => {
-  const winSchemas = new Set();
-  const lineDiag2 = [];
-  const allCells = new Set();
-  for (let x = 0; x < size; x++) {
-    const lineVert = [];
-    const lineHori = [];
-    const lineDiag1 = [];
-
-    lineDiag2.push(`${x}${nameSeparator}${iSymbols[x]}`);
-    for (let y = 0; y < size; y++) {
-      lineVert.push(`${x}${nameSeparator}${iSymbols[y]}`);
-      lineHori.push(`${y}${nameSeparator}${iSymbols[x]}`);
-      lineDiag1.push(`${y}${nameSeparator}${iSymbols[size - 1 - y]}`);
-      allCells.add(`${x}${nameSeparator}${iSymbols[y]}`);
-    }
-    winSchemas.add(lineVert.join("."));
-    winSchemas.add(lineHori.join("."));
-    winSchemas.add(lineDiag1.join("."));
-  }
-
-  winSchemas.add(lineDiag2.join("."));
-  return [arrayToObject([...winSchemas]), [...allCells]];
-
-  function arrayToObject(arr) {
-    const obj = {};
-    arr.forEach((key) => {
-      obj[key] = 0;
-    });
-    return obj;
-  }
-};
-
-const GameOver = ({ winner, reset }) => {
-  return (
-    <Overlay $winner={winner}>
-      {winner ? (
-        <div>
-          <p>GAME OVER</p>
-          <p>{winner == 2 ? "X win!" : winner == -1 ? "Draw" : "O win!"}</p>
-          <button onClick={reset}>Retry</button>
-        </div>
-      ) : null}
-    </Overlay>
-  );
-};
+import {
+  battleFieldRaw,
+  nameParse,
+  iSymbols,
+  nameSeparator,
+  winSchemasRaw,
+} from "./utils";
+import { Box, Column, ColumnName, Rows } from "./gui";
+import { useSpring, to } from "@react-spring/web";
+import { GameOver } from "./GameOver";
 
 const initialSize = 3;
-// todo: fix touched cells by bot
 export default function TicTacToe() {
   const [gameId, setGameId] = useState(new Date().getMilliseconds());
   const [size, setSize] = useState(initialSize);
@@ -138,7 +34,7 @@ export default function TicTacToe() {
   const [touchedCells, setTouchedCells] = useState([]);
   const [unTouchedCells, setUnTouchedCells] = useState(allCells);
   const [hardMode, setHardMode] = useState(false);
-  const [withBot, setWithBot] = useState("bot_random");
+  const [withBot, setWithBot] = useState(1);
   const X_VAL = 2;
   const X_MAX = size * X_VAL;
   const O_VAL = X_MAX + 1;
@@ -168,7 +64,7 @@ export default function TicTacToe() {
   const clickHandler = useCallback(
     (iHor, iVert, name, otherPlayer = false) =>
       (e) => {
-        if (otherPlayer) console.log({ iHor, iVert, name, otherPlayer });
+        // if (otherPlayer) console.log({ iHor, iVert, name, otherPlayer });
         const newBattleField = Object.assign([], battleField, {
           [iHor]: Object.assign([], battleField[iHor], {
             [iVert]: otherPlayer ? "o" : "x",
@@ -204,37 +100,36 @@ export default function TicTacToe() {
     }
     const winner = checkWinner();
     if (winner) {
-      console.log("has winner!");
       const [player, winLine] = winner;
       setWinner(player);
       setWinLine(winLine);
     } else if (touchedCells.length === size ** 2) {
-      console.log({ winner });
       setWinner(-1);
     }
   }, [winSchemas, size]);
 
   useEffect(() => {
-    if (withBot && !playerTurn) {
+    if (unTouchedCells.length && withBot && !playerTurn) {
       const randomCell =
         unTouchedCells[Math.floor(Math.random() * unTouchedCells.length)];
       const otherPlayer = true;
-      const [iHor, iVert] = cellNameParser(randomCell);
+      const [iHor, iVert] = nameParse(randomCell);
       clickHandler(iHor, iVert, randomCell, otherPlayer)();
     }
   }, [unTouchedCells]);
 
   const preSet =
-    (cb, value) =>
+    (cb) =>
     ({ target }) => {
       const decision = window.confirm(
         "Are you really want to change battlefield? The game will be reset."
       );
       if (decision) {
-        cb(value === undefined ? Number(target.value) : value);
+        cb(Number(target.value));
         reset();
       }
     };
+
   return (
     <>
       Left Mouse - X
@@ -262,13 +157,10 @@ export default function TicTacToe() {
         <select onChange={preSet(setWithBot)} value={withBot}>
           <option value="0">Other player</option>
           <option value="1">Random bot</option>
-          <option value="2">Win or tie bot</option>
+          <option value="2" disabled>
+            Minimax bot
+          </option>
         </select>
-        <input
-          type="checkbox"
-          onChange={preSet(setWithBot, !withBot)}
-          value={withBot}
-        />
       </label>
       <button onClick={reset}>Retry</button>
       <Box>
