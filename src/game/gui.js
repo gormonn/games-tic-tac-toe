@@ -47,6 +47,13 @@ export const Column = styled(animated.div)`
     background: ${(p) =>
       p.$touched ? ColumnBackground(p) : "rgba(255,255,255,.5)"};
   }
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 `;
 export const ColumnName = styled.span`
   color: gray;
