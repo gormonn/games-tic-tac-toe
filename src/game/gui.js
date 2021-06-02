@@ -28,23 +28,33 @@ export const Box = styled.div`
   flex-direction: column;
   position: relative;
 `;
+const ColumnBackground = (p) => (p.$touched ? "darkgray" : "gray");
 export const Column = styled(animated.div)`
   display: flex;
   justify-content: center;
   align-items: center;
   transition: 500ms;
-  background: ${(p) => (p.$touched ? "darkgray" : "gray")};
   width: 100px;
   height: 100px;
   position: relative;
+  box-sizing: border-box;
+  border: ${(p) => (p.$isWinLine ? "4px solid black " : "none ")};
+  zoom: ${(p) => (p.$winner ? "1!important;" : "")};
+  background: ${ColumnBackground};
   pointer-events: ${(p) => (p.$touched ? "none" : "auto")};
   cursor: ${(p) => (p.$touched ? "none" : "pointer")};
   &:hover {
-    background: ${(p) => (p.$touched ? "none" : "rgba(255,255,255,.5)")};
+    background: ${(p) =>
+      p.$touched ? ColumnBackground(p) : "rgba(255,255,255,.5)"};
   }
-  border: ${(p) => (p.$isWinLine ? "4px solid black " : "none ")};
-  box-sizing: border-box;
-  zoom: ${(p) => (p.$winner ? "1!important;" : "")};
+
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 `;
 export const ColumnName = styled.span`
   color: gray;
